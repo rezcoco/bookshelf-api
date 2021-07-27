@@ -9,18 +9,11 @@ const addToHandler = (request, h) => {
   const insertedAt = new Date().toDateString()
   const updatedAt = insertedAt
   const newBook = { id, name, year, author, summary, publisher, pageCount, readPage, finished, reading, insertedAt, updatedAt }
-
-  books.push(newBook)
-  const isSuccess = books.filter((book) => book.id === id).length > 0
-
   const getStatusNdMsg = (status, message) => ({ status, message })
 
-  if (!isSuccess) {
-    const response = h.response(getStatusNdMsg('error', 'Buku gagal ditambahkan'))
-    response.code(500)
+  const isSameName = books.filter((book) => book.name === name).length > 0
 
-    return response
-  } else if (name === undefined) {
+  if (name === undefined) {
     const response = h.response(getStatusNdMsg('fail', 'Gagal menambahkan buku. Mohon isi nama buku'))
     response.code(400)
 
@@ -32,19 +25,28 @@ const addToHandler = (request, h) => {
     return response
   }
 
+  books.push(newBook)
+  const isSuccess = books.filter((book) => book.id === id).length > 0
+
+  if (!isSuccess) {
+    const response = h.response(getStatusNdMsg('error', 'Buku gagal ditambahkan'))
+    response.code(500)
+
+    return response
+  }
+
   const response = h.response({
     status: 'success',
     message: 'Buku berhasil ditambahkan',
-    data: { id }
+    data: { bookId: id }
   })
   response.code(201)
 
   return response
 }
 
-const getAllBooksHandler = (requst, h) => {
-  let { name, reading, finished } = requst.query
-
+const getAllBooksHandler = (request, h) => {
+  let { name, reading, finished } = request.query
   const getStatusNdMsg = (status, message) => ({ status, message })
   const getDetails = (variable) => ({
     status: 'success',
@@ -66,7 +68,9 @@ const getAllBooksHandler = (requst, h) => {
 
     return response
   }
+
   if (name !== undefined) {
+    name = name.toLowerCase()
     const bookName = books.filter((book) => book.name.toLowerCase().includes(name))
 
     if (bookName.length > 0) {
@@ -80,7 +84,9 @@ const getAllBooksHandler = (requst, h) => {
     response.code(404)
 
     return response
-  } else if (reading !== undefined) {
+  }
+
+  if (reading !== undefined) {
     reading = reading === '1'
     const bookReading = books.filter((book) => book.reading === reading)
 
@@ -95,7 +101,9 @@ const getAllBooksHandler = (requst, h) => {
     response.code(404)
 
     return response
-  } else if (finished !== undefined) {
+  }
+
+  if (finished !== undefined) {
     finished = finished === '1'
     const bookFinished = books.filter((book) => book.finished === finished)
 
@@ -119,11 +127,13 @@ const getAllBooksHandler = (requst, h) => {
   return response
 }
 
-const getBookById = (request, h) => {
-  const { id } = request.params
-  const book = books.filter((book) => book.id === id)
+const getBookByIdHandler = (request, h) => {
+  const { bookId } = request.params
+  const book = books.filter((book) => book.id === bookId)[0]
 
-  if (book.length !== 0) {
+  console.log(book)
+
+  if (book !== undefined) {
     const response = h.response({
       status: 'success',
       data: { book }
@@ -137,26 +147,26 @@ const getBookById = (request, h) => {
     status: 'fail',
     message: 'Buku tidak ditemukan'
   })
-  response.code(400)
+  response.code(404)
 
   return response
 }
 
 const updateBookByIdHandler = (request, h) => {
-  const { id } = request.params
+  const { bookId } = request.params
   const { name, year, author, summary, publisher, pageCount, readPage, reading } = request.payload
-  const index = books.findIndex((book) => book.id === id)
+  const index = books.findIndex((book) => book.id === bookId)
 
   const getStatusNdMsg = (status, message) => ({ status, message })
 
   if (index !== -1) {
     if (name === undefined) {
-      const response = h.response(getStatusNdMsg('fail', 'Gagal menambahkan buku. Mohon isi nama buku'))
+      const response = h.response(getStatusNdMsg('fail', 'Gagal memperbarui buku. Mohon isi nama buku'))
       response.code(400)
 
       return response
     } else if (readPage > pageCount) {
-      const response = h.response(getStatusNdMsg('fail', 'Gagal menambahkan buku. readPage tidak boleh lebih besar dari pageCount'))
+      const response = h.response(getStatusNdMsg('fail', 'Gagal memperbarui buku. readPage tidak boleh lebih besar dari pageCount'))
       response.code(400)
 
       return response
@@ -177,8 +187,8 @@ const updateBookByIdHandler = (request, h) => {
 }
 
 const deleteBookByIdHandler = (request, h) => {
-  const { id } = request.params
-  const index = books.findIndex((book) => book.id === id)
+  const { bookId } = request.params
+  const index = books.findIndex((book) => book.id === bookId)
 
   if (index !== -1) {
     books.splice(index, 1)
@@ -196,9 +206,9 @@ const deleteBookByIdHandler = (request, h) => {
     status: 'fail',
     message: 'Buku gagal dihapus. Id tidak ditemukan'
   })
-  response.code(400)
+  response.code(404)
 
   return response
 }
 
-module.exports = { addToHandler, getAllBooksHandler, getBookById, updateBookByIdHandler, deleteBookByIdHandler }
+module.exports = { addToHandler, getAllBooksHandler, getBookByIdHandler, updateBookByIdHandler, deleteBookByIdHandler }
