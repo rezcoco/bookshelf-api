@@ -11,8 +11,6 @@ const addToHandler = (request, h) => {
   const newBook = { id, name, year, author, summary, publisher, pageCount, readPage, finished, reading, insertedAt, updatedAt }
   const getStatusNdMsg = (status, message) => ({ status, message })
 
-  const isSameName = books.filter((book) => book.name === name).length > 0
-
   if (name === undefined) {
     const response = h.response(getStatusNdMsg('fail', 'Gagal menambahkan buku. Mohon isi nama buku'))
     response.code(400)
@@ -130,8 +128,6 @@ const getAllBooksHandler = (request, h) => {
 const getBookByIdHandler = (request, h) => {
   const { bookId } = request.params
   const book = books.filter((book) => book.id === bookId)[0]
-
-  console.log(book)
 
   if (book !== undefined) {
     const response = h.response({
